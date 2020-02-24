@@ -4,10 +4,10 @@
 #include <unistd.h>
 #include "Brian.v1.h"
 #include "Brian.v0.h"
-//On=1,Off=0,Dying=2
+//On=1,Off=0,Dying=2 
 int SIZE, ITERATIONS, ANIMATE, BLOCKS, THREADS, SEED, UNOPTIMIZED, PRINT, live_cells, dead_cells, dying_cells;
 void print_board(int board[], int size, int iteration)
-{	
+{
 	if (iteration != -1)
 	{
 		printf("Iteration %d\n", iteration);
@@ -15,11 +15,11 @@ void print_board(int board[], int size, int iteration)
 	for (int i = 0;i < size; i++)
 	{
 		for (int j = 0; j < size; j++)
-		{	
+		{
 			if (board[i * size + j] == 1)//an einai alive
 			{
 				printf("\u25A3 ");
-				live_cells++;		
+				live_cells++;
 			}
 			else if(board[i * size +j] == 0)//an einai dead
 			{
@@ -29,7 +29,7 @@ void print_board(int board[], int size, int iteration)
 			else if(board[i * size +j] == 2)//an einai dying
 			{
 				printf("\u25A7 ");
-				dying_cells++;	
+				dying_cells++;
 			}
 		}
 		printf("\n");
@@ -53,7 +53,7 @@ void arg_parse(int argc, char *argv[])
 		}
 		if (c == 'a')//animation h oxi
 		{
-			ANIMATE = 1;	
+			ANIMATE = 1;
 			printf("fu");
 		}
 		if (c == 'i')//epanalipseis
@@ -105,7 +105,7 @@ int run()
 	//desmeush mnhmhs ston device(gpu)
 	cudaMalloc((void**)&devin, size * size * sizeof(int));//pinakas gia paragwgh-arxikopoihsh
 	cudaMalloc((void**)&devout, size * size * sizeof(int));//o pinakas pou emfanizete
-	cudaMalloc((void**)&devtemp, size * size * sizeof(int));//o pinakas epomenhs genias 
+	cudaMalloc((void**)&devtemp, size * size * sizeof(int));//o pinakas epomenhs genias
 
 	// paragwgh kai arxikopoihsh sympantos
 	for (int i = 0;i < size; i++)
@@ -126,7 +126,7 @@ int run()
 	cudaMemcpy(devout, output, size * size * sizeof(int), cudaMemcpyHostToDevice);
 
 	//xrhsimopoieitai otan den einai gnwsto to megethos ths shared memory kata thn metaglwtish tou programmatos
-	//desmeuei dynamika mnhmh sthn shared memory 
+	//desmeuei dynamika mnhmh sthn shared memory
 	// xrhsimopoieitai mono apo thn 2h ekdosh
 	//periexei ta stoixeia twn threads enos block
 	int shared_board_size = (no_threads + 2 * size) * sizeof(int);
@@ -139,7 +139,7 @@ int run()
 	// 1h ekdosi me global memmory
 	if (unoptimized_run)
 	{
-		
+
 		for (int i = 0;i<iterations;i++)
 		{
 			if (i == 0)
@@ -200,16 +200,16 @@ int run()
 
 	// antigrafi tou apotelesmatos apo gpu->cpu
 	cudaMemcpy(output, devout, size * size * sizeof(int), cudaMemcpyDeviceToHost);
-	
+
 	if (print)
 		print_board(output, size, iterations);
 
 	// Ypologise ton xrono ektelesis
 	gettimeofday(&tv2, NULL);
 	printf ("Total time in kernel = %f seconds\n",(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
-	
-	
-	
+
+
+
 	// Free device memory
 	cudaFree(devin);
 	cudaFree(devout);
@@ -226,4 +226,3 @@ int main(int argc, char* argv[])
 	run();
 	return 0;
 }
-
