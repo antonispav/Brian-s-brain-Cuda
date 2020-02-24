@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "Brian.v1.h"
 #include "Brian.v0.h"
-//On=1,Off=0,Dying=2 
+//On=1,Off=0,Dying=2
 int SIZE, ITERATIONS, ANIMATE, BLOCKS, THREADS, SEED, UNOPTIMIZED, PRINT, live_cells, dead_cells, dying_cells;
 void print_board(int board[], int size, int iteration)
 {
@@ -16,17 +16,17 @@ void print_board(int board[], int size, int iteration)
 	{
 		for (int j = 0; j < size; j++)
 		{
-			if (board[i * size + j] == 1)//an einai alive
+			if (board[i * size + j] == 1)//if it is alive
 			{
 				printf("\u25A3 ");
 				live_cells++;
 			}
-			else if(board[i * size +j] == 0)//an einai dead
+			else if(board[i * size +j] == 0)//if it is dead
 			{
 				printf("\u25A2 ");
 				dead_cells++;
 			}
-			else if(board[i * size +j] == 2)//an einai dying
+			else if(board[i * size +j] == 2)//if it is dying
 			{
 				printf("\u25A7 ");
 				dying_cells++;
@@ -47,16 +47,16 @@ void arg_parse(int argc, char *argv[])
 	while(i < argc)
 	{
 		sscanf(argv[i++], "%c", &c);
-		if (c == 's')//to megethos tou pinaka
+		if (c == 's')//matrix size
 		{
 			sscanf(argv[i++], "%d", &SIZE);
 		}
-		if (c == 'a')//animation h oxi
+		if (c == 'a')//animation or not
 		{
 			ANIMATE = 1;
 			printf("fu");
 		}
-		if (c == 'i')//epanalipseis
+		if (c == 'i')//iterations
 		{
 			sscanf(argv[i++], "%d", &ITERATIONS);
 		}
@@ -85,58 +85,58 @@ void arg_parse(int argc, char *argv[])
 
 int run()
 {
-	// orismata gia to run tou programm
-	int animate = ANIMATE != -1 ? ANIMATE : false; // metavliti gia to an tha uparxei h oxi animation
-	int size = SIZE ? SIZE : 64;//megethos pinaka--default 64
-	int iterations = ITERATIONS ? ITERATIONS : 6;//genies--default 6
-	int no_blocks = BLOCKS ? BLOCKS : size; //arithmos twn block--default 64
-	int no_threads = THREADS ? THREADS : size;//arithmos twn thread--default 64
-	int unoptimized_run = UNOPTIMIZED ? UNOPTIMIZED : 0;//metavliti gia to pia ekdosi epilegthike--default optimized
+	// run arguments
+	int animate = ANIMATE != -1 ? ANIMATE : false; // variable for animation--default False
+	int size = SIZE ? SIZE : 64;//matrix size--default 64
+	int iterations = ITERATIONS ? ITERATIONS : 6;//generations--default 6
+	int no_blocks = BLOCKS ? BLOCKS : size; //number of blocks--default 64
+	int no_threads = THREADS ? THREADS : size;//number of thread--default 64
+	int unoptimized_run = UNOPTIMIZED ? UNOPTIMIZED : 0;//variable for version--default optimized
 	int print = PRINT != -1 ? PRINT : true;
 
 	// Initialize random seed
 	srand(SEED != -1 ? SEED : time(NULL));
 
-	// desmeush mnhmhs ston host(cpu)
-	int *input = (int*)calloc(size * size, sizeof(int));//pinakas gia paragwgh-arxikopoihsh
-	int *output = (int*)calloc(size * size, sizeof(int));//o pinakas pou emfanizete
-	int *devin, *devout, *devtemp;//pinakes ths gpu
+	// host(cpu) memory
+	int *input = (int*)calloc(size * size, sizeof(int));//matrix for production-initialisation
+	int *output = (int*)calloc(size * size, sizeof(int));//the matrix we print
+	int *devin, *devout, *devtemp;//matrix of gpu
 
-	//desmeush mnhmhs ston device(gpu)
-	cudaMalloc((void**)&devin, size * size * sizeof(int));//pinakas gia paragwgh-arxikopoihsh
-	cudaMalloc((void**)&devout, size * size * sizeof(int));//o pinakas pou emfanizete
-	cudaMalloc((void**)&devtemp, size * size * sizeof(int));//o pinakas epomenhs genias
+	// device(gpu) memory
+	cudaMalloc((void**)&devin, size * size * sizeof(int));//matrix for production-initialisation
+	cudaMalloc((void**)&devout, size * size * sizeof(int));//the matrix we print
+	cudaMalloc((void**)&devtemp, size * size * sizeof(int));//matrix of next generation
 
-	// paragwgh kai arxikopoihsh sympantos
+	// production and initialisation of the universe
 	for (int i = 0;i < size; i++)
 	{
 		for (int j = 0; j < size; j++)
 		{
-			input[i*size + j] = rand() % 3;// enas arithmos apo to 0,2
+			input[i*size + j] = rand() % 3;// a number from 0,2
 		}
 	}
 
 	if (print)
 		print_board(input, size, 0);
 
-	// antigrafi tou pinaka arxikopoihshs apo cpu->gpu
+	// initial matrix migration from cpu to gpu
 	cudaMemcpy(devin, input, size * size * sizeof(int), cudaMemcpyHostToDevice);
 
-	//o pinakas pou emfanizete
+	//the matrix we print
 	cudaMemcpy(devout, output, size * size * sizeof(int), cudaMemcpyHostToDevice);
 
-	//xrhsimopoieitai otan den einai gnwsto to megethos ths shared memory kata thn metaglwtish tou programmatos
-	//desmeuei dynamika mnhmh sthn shared memory
-	// xrhsimopoieitai mono apo thn 2h ekdosh
-	//periexei ta stoixeia twn threads enos block
+	//used when the size of shared memory is unknown during the compile
+	//dynamic memory allocation in shared memory
+	//it is used only from version 2
+	//containts threads data of a block
 	int shared_board_size = (no_threads + 2 * size) * sizeof(int);
 
-	// xekina to xronometro
+	// timer start
 	struct timeval  tv1, tv2;
 	gettimeofday(&tv1, NULL);
 
-	// dialexe ekdosh
-	// 1h ekdosi me global memmory
+	// choose version
+	// 1st version with global memmory
 	if (unoptimized_run)
 	{
 
@@ -144,21 +144,21 @@ int run()
 		{
 			if (i == 0)
 			{
-				//xekina na upologizeis me prwto pinaka paragwghs-arxikopoihshs
+				//start calculations with first production-initialisation matrix
 				play<<<no_blocks,no_threads>>>(devin, devout);
 			}
 			else
 			{
-				//sinexise na upologizeis me ton pinaka epomenhs genias
+				//continue calculations with next generation matrix
 				play<<<no_blocks,no_threads>>>(devtemp, devout);
 			}
-			//antigrafh tou pinakas epomenhs genias ston pinaka exwdou ths gpu(eswterika ths gpu)
+			//migration of next generation matrix to output matrix of gpu(inside og gpu)
 			cudaMemcpy(devtemp, devout, size * size * sizeof(int), cudaMemcpyDeviceToDevice);
 
-			//antigrafi tou pinaka exwdou apo gpu->cpu
+			//migration of output matrix from gpu to cpu
 			cudaMemcpy(output, devout, size * size * sizeof(int), cudaMemcpyDeviceToHost);
 
-			//apeikonish apotelesmatwn
+			//print results
 			if (animate == true)
 			{
 				system("clear");
@@ -168,27 +168,27 @@ int run()
 		}
 		printf("Unoptimized run\n");
 	}
-	// 2h ekdosi me shared memmory,xrisimopoiei enan 3o pinaka gia tous upologismous
+	//2nd version with shared memmory,uses a 3rd matrix for calculations
 	else
 	{
 		for (int i = 0;i<iterations;i++)
 		{
 			if (i == 0)
 			{
-				//xekina na upologizeis me prwto pinaka paragwghs-arxikopoihshs
+				//start calculations with first production-initialisation matrix
 				play_with_shared_memory<<<no_blocks,no_threads,shared_board_size>>>(devin, devout, size);
 			}
 			else
 			{
-				//sinexise na upologizeis me ton pinaka epomenhs genias
+				//continue calculations with next generation matrix
 				play_with_shared_memory<<<no_blocks,no_threads,shared_board_size>>>(devtemp, devout, size);
 			}
-			//antigrafh tou pinakas epomenhs genias ston pinaka exwdou ths gpu(eswterika ths gpu)
+			//migration of next generation matrix to output matrix of gpu(inside og gpu)
 			cudaMemcpy(devtemp, devout, size * size * sizeof(int), cudaMemcpyDeviceToDevice);
-			//antigrafi tou pinaka exwdou apo gpu->cpu
+			//migration of output matrix from gpu to cpu
 			cudaMemcpy(output, devout, size * size * sizeof(int), cudaMemcpyDeviceToHost);
 
-			//apeikonish apotelesmatwn
+			//print results
 			if (animate == true)
 			{
 				system("clear");
@@ -198,13 +198,13 @@ int run()
 		}
 	}
 
-	// antigrafi tou apotelesmatos apo gpu->cpu
+	// migration of result from gpu to cpu
 	cudaMemcpy(output, devout, size * size * sizeof(int), cudaMemcpyDeviceToHost);
 
 	if (print)
 		print_board(output, size, iterations);
 
-	// Ypologise ton xrono ektelesis
+	// calculate the run time
 	gettimeofday(&tv2, NULL);
 	printf ("Total time in kernel = %f seconds\n",(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
 
