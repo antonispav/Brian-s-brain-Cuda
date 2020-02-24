@@ -42,3 +42,6 @@ Example
 ```
  ./Brian s 65 i 6 a
 ```
+
+![example](https://user-images.githubusercontent.com/58977971/75168682-f8f35f00-572f-11ea-8af9-b7f4e37d62a5.png)
+result of  “./Brian s 64 i 100 a”.
